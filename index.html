@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculadora de Vidro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-primary: #147A4B;
+      --color-on-primary: #FFFFFF;
+      --color-secondary: #147A4B;
+      --color-accent: #147A4B;
+      --color-background: #F7F7F5;
+      --color-foreground: #171717;
+      --color-muted: #F3F3F1;
+      --color-muted-fg: #6B6B67;
+      --color-border: #E6E6E2;
+      --color-destructive: #B42318;
+      --color-ring: #147A4B;
+      --color-warn: #B42318;
+      --color-warn-bg: #FEF3F2;
+      --color-warn-border: #F5C2C0;
+      --ink: #171717;
+      --shadow: 0 1px 2px rgba(23, 23, 23, 0.04);
+      --radius: 10px;
+      --font: "Inter", ui-sans-serif, system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--color-background);
+      color: var(--color-foreground);
+      line-height: 1.5;
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, select { font-family: inherit; }
+    button { cursor: pointer; }
+    :focus-visible {
+      outline: 2px solid var(--color-ring);
+      outline-offset: 2px;
+    }
+    .skip {
+      position: absolute;
+      left: -999px;
+      top: 8px;
+      background: #fff;
+      padding: 8px 12px;
+      z-index: 100;
+    }
+    .skip:focus { left: 8px; }
+
+    .topbar {
+      background: #fff;
+      color: var(--ink);
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--color-border);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .topbar-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .topbar-inner > div:first-of-type { flex: 1; min-width: 0; }
+    .dl-btn {
+      margin-left: auto;
+      min-height: 40px;
+      padding: 0 14px;
+      border-radius: 8px;
+      border: 1px solid var(--color-border);
+      background: #fff;
+      color: var(--ink);
+      font-weight: 500;
+      font-size: 0.875rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+    .dl-btn:hover { background: var(--color-muted); }
+    .logo {
+      width: 32px;
+      height: 32px;
+      flex: 0 0 32px;
+    }
+    .topbar h1 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .topbar p {
+      margin: 1px 0 0;
+      font-size: 0.78rem;
+      color: var(--color-muted-fg);
+    }
+
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 28px 20px 96px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px 22px 20px;
+    }
+    .card h2 {
+      margin: 0 0 4px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .hint {
+      margin: 0 0 16px;
+      color: var(--color-muted-fg);
+      font-size: 0.8125rem;
+    }
+
+    .price-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    @media (min-width: 640px) {
+      .price-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (min-width: 1024px) {
+      .price-grid { grid-template-columns: 1fr 1fr 1fr; }
+    }
+    .price-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: #fff;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .price-item label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--ink);
+    }
+    .price-item .field {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #fff;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 0 10px;
+      min-height: 42px;
+    }
+    .price-item .field span {
+      color: var(--color-muted-fg);
+      font-weight: 500;
+      font-size: 0.8rem;
+    }
+    .price-item input {
+      border: 0;
+      width: 100%;
+      font-size: 1rem;
+      font-variant-numeric: tabular-nums;
+      background: transparent;
+      min-height: 42px;
+    }
+
+    .dropzone {
+      border: 1px dashed #C9C9C4;
+      border-radius: 10px;
+      padding: 32px 16px;
+      text-align: center;
+      background: #FAFAF8;
+      transition: border-color 160ms ease, background 160ms ease;
+    }
+    .dropzone.drag {
+      border-color: var(--color-primary);
+      background: #F3F8F5;
+    }
+    .dropzone p { margin: 8px 0 0; color: var(--color-muted-fg); font-size: 0.85rem; }
+    .dropzone strong { color: var(--color-foreground); }
+    .file-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 16px;
+      border-radius: 8px;
+      border: 0;
+      background: var(--color-primary);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+    .file-btn:hover { background: #0F6840; }
+    .file-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    input[type="file"] { display: none; }
+
+    .status {
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: var(--color-muted-fg);
+    }
+    .warn-list {
+      margin: 12px 0 0;
+      padding: 12px 14px;
+      background: var(--color-warn-bg);
+      border: 1px solid var(--color-warn-border);
+      border-radius: 8px;
+      color: #7A271A;
+      font-size: 0.82rem;
+    }
+    .warn-list ul { margin: 6px 0 0; padding-left: 18px; }
+
+    .manual {
+      display: grid;
+      gap: 12px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--color-border);
+    }
+    .manual h3 {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    @media (min-width: 768px) {
+      .form-grid {
+        grid-template-columns: 1.4fr 1.6fr 0.8fr 0.8fr 0.6fr auto;
+        align-items: end;
+      }
+    }
+    .field-block label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: var(--color-muted-fg);
+    }
+    .field-block input,
+    .field-block select {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 0 10px;
+      background: #fff;
+      font-size: 1rem;
+    }
+    .btn {
+      min-height: 40px;
+      padding: 0 14px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      font-weight: 550;
+      font-size: 0.875rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 160ms ease, border-color 160ms ease;
+    }
+    .btn-accent {
+      background: var(--color-accent);
+      color: #fff;
+    }
+    .btn-accent:hover { background: #0F6840; }
+    .btn-ghost {
+      background: #fff;
+      border-color: var(--color-border);
+      color: var(--color-foreground);
+    }
+    .btn-ghost:hover { background: var(--color-muted); }
+    .btn-danger {
+      background: #fff;
+      border-color: var(--color-border);
+      color: var(--color-destructive);
+    }
+    .btn-danger:hover { background: var(--color-warn-bg); }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    @media (min-width: 640px) {
+      .kpis { grid-template-columns: 1fr 1fr; }
+    }
+    @media (min-width: 1024px) {
+      .kpis { grid-template-columns: repeat(4, 1fr); }
+    }
+    .kpi {
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      min-height: 96px;
+    }
+    .kpi.cat {
+      background: #fff;
+      color: var(--color-foreground);
+      border: 1px solid var(--color-border);
+    }
+    .kpi .label {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--color-muted-fg);
+    }
+    .kpi .value {
+      font-size: 1.45rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.03em;
+      margin-top: 6px;
+    }
+    .kpi .sub {
+      font-size: 0.78rem;
+      margin-top: 4px;
+      color: var(--color-muted-fg);
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi.pay .value { color: var(--color-primary); }
+    .empty {
+      text-align: center;
+      padding: 28px 12px;
+      color: var(--color-muted-fg);
+    }
+
+    .client {
+      margin-top: 16px;
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .client header {
+      background: #fff;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: baseline;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .client header h3 {
+      margin: 0;
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+    .client header span {
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+      color: var(--color-muted-fg);
+      font-size: 0.85rem;
+    }
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--color-border);
+      vertical-align: middle;
+      font-variant-numeric: tabular-nums;
+    }
+    th {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-muted-fg);
+      font-weight: 500;
+      background: #FAFAF8;
+    }
+    tr.warn td { background: var(--color-warn-bg); }
+    table input, table select {
+      min-height: 40px;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 0 8px;
+      max-width: 160px;
+      font-size: 0.85rem;
+    }
+    table input.w-sm { width: 72px; }
+    .icon-btn {
+      min-width: 44px;
+      min-height: 44px;
+      border: 0;
+      background: transparent;
+      color: var(--color-destructive);
+      border-radius: 8px;
+    }
+    .icon-btn:hover { background: var(--color-warn-bg); }
+    .subs {
+      padding: 10px 14px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 0.8rem;
+    }
+    .chip {
+      background: #F3F3F1;
+      border-radius: 6px;
+      padding: 5px 9px;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: #F3F3F1;
+      color: #52524E;
+    }
+    .badge.manual { background: #F3F8F5; color: #147A4B; }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
+    }
+
+    @media print {
+      .no-print, .topbar p, .skip { display: none !important; }
+      body { background: #fff; }
+      .card { box-shadow: none; border: 0; padding: 0; }
+      .client { break-inside: avoid; }
+      table input, table select { border: 0; min-height: auto; }
+      .icon-btn { display: none; }
+      .topbar { position: static; background: #fff; color: #000; padding: 0 0 12px; border: 0; }
+      .topbar h1 { color: #000; }
+      .dl-btn { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#relatorio">Ir para o relatorio</a>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="8" fill="#147A4B"/>
+        <rect x="8" y="8" width="16" height="16" rx="2.5" fill="none" stroke="#fff" stroke-width="1.6"/>
+        <path d="M8 16h16M16 8v16" stroke="#fff" stroke-width="1.2" opacity="0.55"/>
+      </svg>
+      <div>
+        <h1>Calculadora de Vidro</h1>
+        <p>Pedidos WebGlass &middot; arredonda de 50 em 50 mm &middot; totais por cliente e por tipo</p>
+      </div>
+      <a class="dl-btn no-print" href="calculadora-vidro.zip" download>Baixar para o computador</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="card no-print" aria-labelledby="precos-title">
+      <h2 id="precos-title">Precos por m&sup2;</h2>
+      <p class="hint">Valores em reais. Ficam salvos neste navegador e o relatorio recalcula na hora.</p>
+      <div class="price-grid" id="price-grid"></div>
+    </section>
+
+    <section class="card no-print" aria-labelledby="entrada-title">
+      <h2 id="entrada-title">Entrada</h2>
+      <p class="hint">Envie um ou varios PDFs do WebGlass. Cada pagina vira pecas. Voce tambem pode lancar na mao.</p>
+      <div class="dropzone" id="dropzone">
+        <button type="button" class="file-btn" id="pick-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 16V4M12 4l-4 4M12 4l4 4"/>
+            <path d="M4 20h16"/>
+          </svg>
+          Selecionar PDFs
+        </button>
+        <p>ou arraste os arquivos aqui</p>
+        <input id="file-input" type="file" accept="application/pdf" multiple>
+      </div>
+      <div class="status" id="status" role="status"></div>
+      <div class="warn-list" id="warnings" hidden></div>
+
+      <form class="manual" id="manual-form">
+        <h3>Peca manual</h3>
+        <div class="form-grid">
+          <div class="field-block">
+            <label for="m-client">Cliente (SN)</label>
+            <input id="m-client" required placeholder="180 - ERICA" autocomplete="off">
+          </div>
+          <div class="field-block">
+            <label for="m-cat">Categoria</label>
+            <select id="m-cat" required></select>
+          </div>
+          <div class="field-block">
+            <label for="m-w">Largura mm</label>
+            <input id="m-w" type="number" min="1" step="1" required>
+          </div>
+          <div class="field-block">
+            <label for="m-h">Altura mm</label>
+            <input id="m-h" type="number" min="1" step="1" required>
+          </div>
+          <div class="field-block">
+            <label for="m-q">Qtde</label>
+            <input id="m-q" type="number" min="1" step="1" value="1" required>
+          </div>
+          <button class="btn btn-accent" type="submit">Adicionar</button>
+        </div>
+      </form>
+      <div class="actions">
+        <button type="button" class="btn btn-ghost" id="print-btn">Imprimir relatorio</button>
+        <button type="button" class="btn btn-danger" id="clear-btn">Limpar pecas</button>
+      </div>
+    </section>
+
+    <section class="card" id="relatorio" aria-labelledby="relatorio-title">
+      <h2 id="relatorio-title">Relatorio</h2>
+      <p class="hint no-print">Area cobrada com lados arredondados para cima de 50 em 50 mm. Pecas nao classificadas nao entram no valor.</p>
+      <div id="report"></div>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="engine.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+    var PRICE_KEY = "vidro-precos";
+    var pieces = [];
+    var seq = 1;
+    var prices = loadPrices();
+
+    var priceGrid = document.getElementById("price-grid");
+    var dropzone = document.getElementById("dropzone");
+    var fileInput = document.getElementById("file-input");
+    var pickBtn = document.getElementById("pick-btn");
+    var statusEl = document.getElementById("status");
+    var warningsEl = document.getElementById("warnings");
+    var reportEl = document.getElementById("report");
+    var catSelect = document.getElementById("m-cat");
+
+    CATEGORIES.forEach(function (c) {
+      var opt = document.createElement("option");
+      opt.value = c.id;
+      opt.textContent = c.nome;
+      catSelect.appendChild(opt);
+    });
+
+    function loadPrices() {
+      var out = {};
+      CATEGORIES.forEach(function (c) { out[c.id] = 0; });
+      try {
+        var saved = JSON.parse(localStorage.getItem(PRICE_KEY) || "{}");
+        CATEGORIES.forEach(function (c) {
+          if (saved[c.id] != null) out[c.id] = Number(saved[c.id]) || 0;
+        });
+      } catch (e) {}
+      return out;
+    }
+
+    function savePrices() {
+      localStorage.setItem(PRICE_KEY, JSON.stringify(prices));
+    }
+
+    function formatM2(n) {
+      return (Number(n) || 0).toLocaleString("pt-BR", {
+        minimumFractionDigits: 3,
+        maximumFractionDigits: 3,
+      });
+    }
+
+    function formatBRL(n) {
+      return (Number(n) || 0).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+      });
+    }
+
+    function renderPrices() {
+      priceGrid.innerHTML = "";
+      CATEGORIES.forEach(function (c) {
+        var wrap = document.createElement("div");
+        wrap.className = "price-item";
+        wrap.innerHTML =
+          '<label for="p-' + c.id + '">' + c.nome + "</label>" +
+          '<div class="field"><span>R$</span>' +
+          '<input id="p-' + c.id + '" type="number" min="0" step="0.01" inputmode="decimal" value="' +
+          (prices[c.id] || 0) + '"></div>';
+        var input = wrap.querySelector("input");
+        input.addEventListener("input", function () {
+          prices[c.id] = Number(input.value) || 0;
+          savePrices();
+          renderReport();
+        });
+        priceGrid.appendChild(wrap);
+      });
+    }
+
+    function setStatus(msg) {
+      statusEl.textContent = msg || "";
+    }
+
+    function showWarnings(list) {
+      if (!list.length) {
+        warningsEl.hidden = true;
+        warningsEl.innerHTML = "";
+        return;
+      }
+      warningsEl.hidden = false;
+      warningsEl.innerHTML =
+        "<strong>Avisos</strong><ul>" +
+        list.map(function (w) { return "<li>" + escapeHtml(w) + "</li>"; }).join("") +
+        "</ul>";
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function itemsToText(items) {
+      var rows = [];
+      items.forEach(function (it) {
+        if (!it.str) return;
+        var y = it.transform ? Math.round(it.transform[5]) : 0;
+        var x = it.transform ? it.transform[4] : 0;
+        var row = null;
+        for (var i = 0; i < rows.length; i++) {
+          if (Math.abs(rows[i].y - y) <= 2) {
+            row = rows[i];
+            break;
+          }
+        }
+        if (!row) {
+          row = { y: y, parts: [] };
+          rows.push(row);
+        }
+        row.parts.push({ x: x, str: it.str });
+      });
+      rows.sort(function (a, b) { return b.y - a.y; });
+      return rows
+        .map(function (r) {
+          r.parts.sort(function (a, b) { return a.x - b.x; });
+          return r.parts.map(function (p) { return p.str; }).join(" ");
+        })
+        .join("\n");
+    }
+
+    async function readPdfFile(file) {
+      var buf = await file.arrayBuffer();
+      var pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+      var allPieces = [];
+      var warnings = [];
+      var i;
+      for (i = 1; i <= pdf.numPages; i++) {
+        var page = await pdf.getPage(i);
+        var content = await page.getTextContent();
+        var text = itemsToText(content.items);
+        var parsed = parseWebGlassText(text, file.name + " p." + i);
+        parsed.pieces.forEach(function (p) {
+          p.id = "p" + seq++;
+          allPieces.push(p);
+        });
+        warnings = warnings.concat(parsed.warnings);
+      }
+      return { pieces: allPieces, warnings: warnings, pages: pdf.numPages };
+    }
+
+    async function handleFiles(fileList) {
+      var files = Array.prototype.slice.call(fileList).filter(function (f) {
+        return f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+      });
+      if (!files.length) {
+        setStatus("Nenhum PDF selecionado.");
+        return;
+      }
+      pickBtn.disabled = true;
+      pickBtn.textContent = "Lendo PDFs...";
+      var imported = 0;
+      var pages = 0;
+      var warns = [];
+      try {
+        for (var i = 0; i < files.length; i++) {
+          try {
+            var result = await readPdfFile(files[i]);
+            pieces = pieces.concat(result.pieces);
+            imported += result.pieces.length;
+            pages += result.pages;
+            warns = warns.concat(result.warnings);
+          } catch (err) {
+            warns.push("Nao foi possivel ler o arquivo " + files[i].name);
+          }
+        }
+        setStatus(
+          imported + " peca(s) em " + pages + " pagina(s) de " + files.length + " arquivo(s)."
+        );
+        showWarnings(warns);
+        renderReport();
+      } finally {
+        pickBtn.disabled = false;
+        pickBtn.innerHTML = pickBtn.getAttribute("data-html") || pickBtn.innerHTML;
+        pickBtn.innerHTML =
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 20h16"/></svg> Selecionar PDFs';
+        fileInput.value = "";
+      }
+    }
+
+    pickBtn.addEventListener("click", function () { fileInput.click(); });
+    fileInput.addEventListener("change", function () { handleFiles(fileInput.files); });
+
+    ["dragenter", "dragover"].forEach(function (ev) {
+      dropzone.addEventListener(ev, function (e) {
+        e.preventDefault();
+        dropzone.classList.add("drag");
+      });
+    });
+    ["dragleave", "drop"].forEach(function (ev) {
+      dropzone.addEventListener(ev, function (e) {
+        e.preventDefault();
+        dropzone.classList.remove("drag");
+      });
+    });
+    dropzone.addEventListener("drop", function (e) {
+      handleFiles(e.dataTransfer.files);
+    });
+
+    document.getElementById("manual-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      pieces.push({
+        id: "m" + seq++,
+        client: document.getElementById("m-client").value.trim() || "SEM SN",
+        categoryId: document.getElementById("m-cat").value,
+        qty: Number(document.getElementById("m-q").value) || 1,
+        widthMm: Number(document.getElementById("m-w").value) || 0,
+        heightMm: Number(document.getElementById("m-h").value) || 0,
+        source: "manual",
+        fileName: "",
+      });
+      document.getElementById("m-w").value = "";
+      document.getElementById("m-h").value = "";
+      document.getElementById("m-q").value = "1";
+      renderReport();
+    });
+
+    document.getElementById("clear-btn").addEventListener("click", function () {
+      if (!pieces.length) return;
+      if (!confirm("Limpar todas as pecas desta sessao? Os precos permanecem.")) return;
+      pieces = [];
+      setStatus("");
+      showWarnings([]);
+      renderReport();
+    });
+
+    document.getElementById("print-btn").addEventListener("click", function () {
+      window.print();
+    });
+
+    function findPiece(id) {
+      for (var i = 0; i < pieces.length; i++) {
+        if (pieces[i].id === id) return pieces[i];
+      }
+      return null;
+    }
+
+    function catOptions(selected) {
+      var html = '<option value="nao-classificado">Nao classificado</option>';
+      CATEGORIES.forEach(function (c) {
+        html +=
+          '<option value="' + c.id + '"' +
+          (c.id === selected ? " selected" : "") +
+          ">" + c.nome + "</option>";
+      });
+      if (selected === "nao-classificado") {
+        html = html.replace(
+          'value="nao-classificado"',
+          'value="nao-classificado" selected'
+        );
+      }
+      return html;
+    }
+
+    function renderReport() {
+      var totals = computeTotals(pieces, prices);
+      if (!pieces.length) {
+        reportEl.innerHTML =
+          '<div class="empty">Nenhuma peca ainda. Envie PDFs ou lance uma peca manual.</div>';
+        return;
+      }
+
+      var kpiHtml = '<div class="kpis">';
+      kpiHtml +=
+        '<div class="kpi"><div class="label">Area total</div><div class="value">' +
+        formatM2(totals.totalM2) +
+        ' m&sup2;</div><div class="sub">' +
+        pieces.length +
+        " peca(s) &middot; " +
+        totals.byClient.length +
+        " cliente(s)</div></div>";
+      kpiHtml +=
+        '<div class="kpi pay"><div class="label">Total a pagar</div><div class="value">' +
+        formatBRL(totals.totalPay) +
+        "</div></div>";
+
+      CATEGORIES.forEach(function (c) {
+        var row = totals.byCategory[c.id];
+        if (!row || !row.m2) return;
+        kpiHtml +=
+          '<div class="kpi cat"><div class="label">' +
+          escapeHtml(c.nome) +
+          '</div><div class="value">' +
+          formatM2(row.m2) +
+          ' m&sup2;</div><div class="sub">' +
+          formatBRL(row.pay) +
+          "</div></div>";
+      });
+      kpiHtml += "</div>";
+
+      var clientsHtml = totals.byClient
+        .map(function (cl) {
+          var rows = cl.pieces
+            .map(function (p) {
+              var area = pieceAreaM2(p.widthMm, p.heightMm, p.qty);
+              var classified = p.categoryId !== "nao-classificado";
+              var pay = classified ? area.m2 * (Number(prices[p.categoryId]) || 0) : 0;
+              var warn = classified ? "" : " warn";
+              return (
+                '<tr class="' +
+                warn +
+                '" data-id="' +
+                escapeHtml(p.id) +
+                '">' +
+                "<td>" +
+                '<input class="w-sm js-qty" type="number" min="1" value="' +
+                p.qty +
+                '"></td>' +
+                "<td>" +
+                '<input class="w-sm js-w" type="number" min="1" value="' +
+                p.widthMm +
+                '"> x ' +
+                '<input class="w-sm js-h" type="number" min="1" value="' +
+                p.heightMm +
+                '"></td>' +
+                "<td>" +
+                area.widthBilled +
+                " x " +
+                area.heightBilled +
+                "</td>" +
+                "<td><select class=\"js-cat\">" +
+                catOptions(p.categoryId) +
+                "</select></td>" +
+                "<td>" +
+                formatM2(area.m2) +
+                "</td>" +
+                "<td>" +
+                (classified ? formatBRL(pay) : "—") +
+                "</td>" +
+                "<td><span class=\"badge" +
+                (p.source === "manual" ? " manual" : "") +
+                '">' +
+                (p.source === "manual" ? "Manual" : "PDF") +
+                "</span></td>" +
+                '<td><button type="button" class="icon-btn js-del" aria-label="Excluir peca">' +
+                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5h6v2M8 7l1 12h6l1-12"/></svg>' +
+                "</button></td>" +
+                "</tr>"
+              );
+            })
+            .join("");
+
+          var chips = CATEGORIES.filter(function (c) {
+            return cl.byCategory[c.id] && cl.byCategory[c.id].m2;
+          })
+            .map(function (c) {
+              var row = cl.byCategory[c.id];
+              return (
+                '<span class="chip">' +
+                escapeHtml(c.nome) +
+                ": " +
+                formatM2(row.m2) +
+                " m&sup2; &middot; " +
+                formatBRL(row.pay) +
+                "</span>"
+              );
+            })
+            .join("");
+
+          if (cl.unclassifiedCount) {
+            chips +=
+              '<span class="chip">Nao classificado: ' +
+              cl.unclassifiedCount +
+              " peca(s)</span>";
+          }
+
+          return (
+            '<article class="client"><header>' +
+            "<div><h3>" +
+            escapeHtml(cl.client) +
+            '</h3></div><span>' +
+            formatM2(cl.m2) +
+            " m&sup2; &middot; " +
+            formatBRL(cl.pay) +
+            "</span></header>" +
+            '<div class="table-wrap"><table><thead><tr>' +
+            "<th>Qtde</th><th>Original mm</th><th>Cobrada mm</th><th>Categoria</th><th>m&sup2;</th><th>Valor</th><th>Origem</th><th class=\"no-print\"></th>" +
+            "</tr></thead><tbody>" +
+            rows +
+            "</tbody></table></div>" +
+            '<div class="subs">' +
+            chips +
+            "</div></article>"
+          );
+        })
+        .join("");
+
+      reportEl.innerHTML = kpiHtml + clientsHtml;
+    }
+
+    reportEl.addEventListener("change", function (e) {
+      var tr = e.target.closest("tr[data-id]");
+      if (!tr) return;
+      var p = findPiece(tr.getAttribute("data-id"));
+      if (!p) return;
+      if (e.target.classList.contains("js-qty")) p.qty = Number(e.target.value) || 1;
+      if (e.target.classList.contains("js-w")) p.widthMm = Number(e.target.value) || 0;
+      if (e.target.classList.contains("js-h")) p.heightMm = Number(e.target.value) || 0;
+      if (e.target.classList.contains("js-cat")) p.categoryId = e.target.value;
+      renderReport();
+    });
+
+    reportEl.addEventListener("click", function (e) {
+      var btn = e.target.closest(".js-del");
+      if (!btn) return;
+      var tr = btn.closest("tr[data-id]");
+      if (!tr) return;
+      var id = tr.getAttribute("data-id");
+      pieces = pieces.filter(function (p) { return p.id !== id; });
+      renderReport();
+    });
+
+    renderPrices();
+    renderReport();
+  </script>
+</body>
+</html>
